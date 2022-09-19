@@ -27,7 +27,7 @@ jobs:
               id: deploy
               uses: nwtgck/actions-netlify@v1.2
               with:
-                publish-dir: ./src/HelloBlazor.Client/release/wwwroot
+                publish-dir: ./release/wwwroot
                 netlify-config-path: ./src/HelloBlazor.Client/netlify.toml
                 production-branch: main
                 github-token: ${{ secrets.GITHUB_TOKEN }}
