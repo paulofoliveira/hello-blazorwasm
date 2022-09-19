@@ -1,0 +1,42 @@
+name: 'Deploy: Frontend'
+
+on:
+    push:
+        branches: [main]
+        paths:
+          - 'src/HelloBlazor.Client/**'
+
+    # Allows you to run this workflow manually from the Actions tab
+    workflow_dispatch:
+
+jobs:
+    deploy-to-github-pages:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v2
+
+            - name: Setup .NET Core SDK
+              uses: actions/setup-dotnet@v1
+              with:
+                  dotnet-version: 6.x
+
+            - name: NPM Install
+              run: npm ci
+
+            - name: Publish .NET Core Project
+              run: dotnet publish src/HelloBlazor.Client/HelloBlazor.Client.csproj -c Release -o release --nologo 
+
+            - name: Deploy to Netlify
+              id: deploy
+              uses: nwtgck/actions-netlify@v1.2
+              with:
+                publish-dir: ./src/HelloBlazor.Client/release/wwwroot
+                netlify-config-path: ./src/HelloBlazor.Client/netlify.toml
+                production-branch: main
+                github-token: ${{ secrets.GITHUB_TOKEN }}
+                deploy-message: ${{ github.event.pull_request.title }}
+                alias: ${{ github.head_ref }}
+              env:
+                NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+                NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+              timeout-minutes: 1
