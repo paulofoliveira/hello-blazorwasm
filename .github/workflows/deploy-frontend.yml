@@ -19,7 +19,7 @@ jobs:
     name: 'Build and Publish'
     runs-on: ubuntu-latest
     env:
-        CSPROJ_PATH: "${{ env.PROJECT_PATH }}/HelloBlazor.Client.csproj"
+        CSPROJ_PATH: "$PROJECT_PATH/HelloBlazor.Client.csproj"
 
     steps:
 
@@ -51,7 +51,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: build-and-publish
     env:
-        TOML_PATH: "${{ env.PROJECT_PATH }}/netlify.toml"
+        TOML_PATH: "$PROJECT_PATH/netlify.toml"
 
     steps:
 
