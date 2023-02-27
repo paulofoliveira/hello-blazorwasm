@@ -51,7 +51,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: build-and-publish
     env:
-        TOML_PATH: "$PROJECT_PATH/netlify.toml"
+        TOML_PATH: "./$PROJECT_PATH/netlify.toml"
 
     steps:
 
