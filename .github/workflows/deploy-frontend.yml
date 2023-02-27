@@ -1,4 +1,4 @@
-name: 'Deploy: Frontend'
+name: 'CI/CD Frontend'
 
 on:
     push:
@@ -6,34 +6,75 @@ on:
         paths:
           - 'src/HelloBlazor.Client/**'
 
-    # Allows you to run this workflow manually from the Actions tab
-    workflow_dispatch:
+    workflow_dispatch: # Allows you to run this workflow manually from the Actions tab
+
+env:
+  PROJECT_PATH: 'src/HelloBlazor.Client'
+  PACKAGE_OUTPUT_DIRECTORY: ${{ github.workspace }}/output
+  CONFIGURATION: 'Release'
+  PACKAGE_NAME: 'blazorapp'
 
 jobs:
-    deploy-to-netlify:
-        runs-on: ubuntu-latest
-        steps:
-            - uses: actions/checkout@v2
+  build-and-publish:
+    name: 'Build and Publish'
+    runs-on: ubuntu-latest
+    env:
+      CSPROJ_PATH: "${{ env.PROJECT_PATH }}/HelloBlazor.Client.csproj"
+    steps:
 
-            - name: Setup .NET Core SDK
-              uses: actions/setup-dotnet@v1
-              with:
-                  dotnet-version: 6.x
+    - name: 'Checkout Code'
+      uses: actions/checkout@v3
 
-            - name: Publish .NET Core Project
-              run: dotnet publish src/HelloBlazor.Client/HelloBlazor.Client.csproj -c Release -o release --nologo 
+    - name: Setup .NET Core SDK
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: 6.x
 
-            - name: Deploy to Netlify
-              id: deploy
-              uses: nwtgck/actions-netlify@v1.2
-              with:
-                publish-dir: ./release/wwwroot
-                netlify-config-path: ./src/HelloBlazor.Client/netlify.toml
-                production-branch: main
-                github-token: ${{ secrets.GITHUB_TOKEN }}
-                deploy-message: ${{ github.event.pull_request.title }}
-                alias: ${{ github.head_ref }}
-              env:
-                NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
-                NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
-              timeout-minutes: 1
+    - name: 'Restore Packages'
+      run: dotnet restore ${{ env.CSPROJ_PATH }}
+
+    - name: 'Build'
+      run: dotnet build ${{ env.CSPROJ_PATH }} --no-restore --configuration ${{ env.CONFIGURATION }}
+
+    - name: Publish
+      run: dotnet publish ${{ env.CSPROJ_PATH }} --configuration ${{ env.CONFIGURATION }} --no-build --no-restore --output ${{ env.PACKAGE_OUTPUT_DIRECTORY }} --nologo 
+
+    - name: "Upload Artifact"
+      uses: actions/upload-artifact@v3
+      with:
+        name: ${{ env.PACKAGE_NAME }}
+        path: ${{ env.PACKAGE_OUTPUT_DIRECTORY }}
+  
+  deploy:
+    name: 'Deploy'
+    runs-on: ubuntu-latest
+    needs: build-and-publish
+    env:
+      TOML_PATH: "${{ env.PROJECT_PATH }}/netlify.toml"
+
+    steps:
+
+     - name: "Download Artifact"
+       uses: actions/download-artifact@v3
+       with:
+         name: ${{ env.PACKAGE_NAME }}
+    
+     - name: Deploy to Netlify
+       id: deploy
+       uses: nwtgck/actions-netlify@v1.2
+       with:
+         publish-dir: ./wwwroot
+         netlify-config-path: ${{ env.TOML_PATH }}
+         production-branch: main
+         github-token: ${{ secrets.GITHUB_TOKEN }}
+         deploy-message: ${{ github.event.pull_request.title }}
+         alias: ${{ github.head_ref }}
+       env:
+         NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+         NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+         timeout-minutes: 1
+
+     - name: "Delete Artifact"
+       uses: geekyeggo/delete-artifact@v2
+       with:
+        name: ${{ env.PACKAGE_NAME }}
