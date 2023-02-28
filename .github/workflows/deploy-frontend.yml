@@ -43,7 +43,7 @@ jobs:
 
     - name: 'Copy Netlify toml File' 
       run: |
-        cp ${{ env.$TOML_PATH }} "${{ env.PACKAGE_OUTPUT_DIRECTORY }}/netlify.toml"
+        cp ${{ env.TOML_PATH }} "${{ env.PACKAGE_OUTPUT_DIRECTORY }}/netlify.toml"
 
     - name: "Upload Artifact"
       uses: actions/upload-artifact@v3
