@@ -43,6 +43,14 @@ jobs:
       if: steps.versionize.outcome != 'success'
       run: echo "Skipping Publishing. No Release Required."
 
+    - name: 'Push changes to GitHub'
+      if: steps.versionize.outcome == 'success'
+      uses: ad-m/github-push-action@master
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        branch: ${{ github.ref }}
+        tags: true
+
     - name: 'Create a Release'
       if: steps.versionize.outcome == 'success'
       uses: "actions/github-script@v6"
