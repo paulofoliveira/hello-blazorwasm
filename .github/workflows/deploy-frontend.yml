@@ -20,6 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
         CSPROJ_PATH: "$PROJECT_PATH/HelloBlazor.Client.csproj"
+        TOML_PATH: "$PROJECT_PATH/netlify.toml"
 
     steps:
 
@@ -40,6 +41,10 @@ jobs:
     - name: Publish
       run: dotnet publish ${{ env.CSPROJ_PATH }} --configuration ${{ env.CONFIGURATION }} --no-build --no-restore --output ${{ env.PACKAGE_OUTPUT_DIRECTORY }} --nologo 
 
+    - name: 'Copy Netlify toml File' 
+      run: |
+        cp ${{ env.$TOML_PATH }} "${{ env.PACKAGE_OUTPUT_DIRECTORY }}/netlify.toml"
+
     - name: "Upload Artifact"
       uses: actions/upload-artifact@v3
       with:
@@ -50,10 +55,11 @@ jobs:
     name: 'Deploy'
     runs-on: ubuntu-latest
     needs: build-and-publish
-    env:
-        TOML_PATH: "./$PROJECT_PATH/netlify.toml"
 
     steps:
+
+     - name: 'Checkout Code'
+       uses: actions/checkout@v3
 
      - name: "Download Artifact"
        uses: actions/download-artifact@v3
@@ -65,7 +71,7 @@ jobs:
        uses: nwtgck/actions-netlify@v1.2
        with:
          publish-dir: ./wwwroot
-         netlify-config-path: ${{ env.TOML_PATH }}
+         netlify-config-path: ./netlify.toml
          production-branch: main
          github-token: ${{ secrets.GITHUB_TOKEN }}
          deploy-message: ${{ github.event.pull_request.title }}
